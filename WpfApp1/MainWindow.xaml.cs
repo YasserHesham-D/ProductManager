@@ -11,6 +11,9 @@ namespace ProductManager
     {
         private List<Product> allProducts;
         private ObservableCollection<Product> filteredProducts;
+        private List<Unit> allUnits;
+        private List<Sale> allSales;
+
 
         public MainWindow()
         {
@@ -57,7 +60,6 @@ namespace ProductManager
             var filtered = allProducts.Where(p =>
                 (string.IsNullOrEmpty(searchText) ||
                  p.Name.ToLower().Contains(searchText) ||
-                 p.Price.Equals(searchText) ||
                  p.Description.ToLower().Contains(searchText))
             ).ToList();
 
@@ -147,13 +149,28 @@ namespace ProductManager
                 MessageBox.Show("Please select a product to delete.", "No Selection", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
-
-        //private void OpenPOS_Click(object sender, RoutedEventArgs e)
-        //{
-        //    var pos = new PosWindow(allProducts);
-        //    pos.ShowDialog();
-        //}
-
+        private void OpenPOS_Click(object sender, RoutedEventArgs e)
+        {
+            // Assume you have lists: allProducts (List<Product>), allUnits (List<Unit>), allSales (List<Sale>)
+            var pos = new PosWindow(allProducts, allUnits, allSales);
+            if (pos.ShowDialog() == true)
+            {
+                // sales were possibly updated; optional: persist sales somewhere central if needed
+            }
+        }
+        private void ManageUnits_Click(object sender, RoutedEventArgs e)
+        {
+            // Suppose you have a List<Unit> allUnits field in the window
+            var unitsWindow = new UnitListWindow(allUnits);
+            unitsWindow.Owner = this;
+            if (unitsWindow.ShowDialog() == true)
+            {
+                // unitsWindow.Units has the updated collection (ObservableCollection<Unit>)
+                // If you need to refresh any UI that depends on units, do it here:
+                // e.g. Refresh units shown for selected product or persist via DataService
+                // Example: _units = unitsWindow.Units.ToList();
+            }
+        }
 
         private void ProductsGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -194,7 +211,6 @@ namespace ProductManager
         public int Id { get; set; }
         public string Name { get; set; } = "";
         public string Description { get; set; } = "";
-        public decimal Price { get; set; } // ✅ Add this
         public List<ProductUnit> ProductUnits { get; set; } = new(); // ✅ Make it public
     }
 
@@ -216,10 +232,21 @@ namespace ProductManager
     {
         public int Id { get; set; }
         public DateTime EntryDate { get; set; }
-        public decimal Quantity { get; set; }
         public decimal TotalPrice { get; set; }
-
+        public decimal TotalQuantity { get; set; }
+        public List<SaleItem> Items { get; set; } = new();
         public List<ProductUnit> productUnits { get; set; } = new();
+    }
+    // SaleItem.cs (new)
+    public class SaleItem
+    {
+        public int ProductId { get; set; }
+        public int UnitId { get; set; }
+        public string ProductName { get; set; } = "";
+        public string UnitName { get; set; } = "";
+        public decimal UnitPrice { get; set; }
+        public decimal Quantity { get; set; }
+        public decimal Total => UnitPrice * Quantity;
     }
 
 }
